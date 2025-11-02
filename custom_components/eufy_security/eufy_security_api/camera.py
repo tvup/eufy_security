@@ -114,16 +114,20 @@ class Camera(Device):
         self.stream_status = StreamStatus.PREPARING
         self.stream_debug = "info - send command to add-on"
         _LOGGER.debug(f"_initiate_start_stream - {self.stream_debug} - {stream_type}")
-        event = None
+
         if stream_type == StreamProvider.P2P:
             event = self.p2p_started_event
             event.clear()
             if await self.api.start_livestream(self.product_type, self.serial_no) is False:
+                _LOGGER.warning("start_livestream returned False for %s", self.serial_no)
+                self.stream_status = StreamStatus.IDLE
                 return False
         else:
             event = self.rtsp_started_event
             event.clear()
             if await self.api.start_rtsp_livestream(self.product_type, self.serial_no) is False:
+                _LOGGER.warning("start_rtsp_livestream returned False for %s", self.serial_no)
+                self.stream_status = StreamStatus.IDLE
                 return False
 
         try:
@@ -132,9 +136,18 @@ class Camera(Device):
             _LOGGER.debug(f"_initiate_start_stream - {self.stream_debug}")
             return True
         except asyncio.TimeoutError:
-            self.stream_debug = f"error - command was failed - {event}"
-            _LOGGER.debug(f"_initiate_start_stream - {self.stream_debug}")
+            self.stream_debug = f"error - command timed out - {event}"
+            _LOGGER.warning(f"_initiate_start_stream - {self.stream_debug}")
+            self.stream_status = StreamStatus.IDLE
             return False
+        except Exception as ex:
+            _LOGGER.exception("Unexpected exception during start_stream: %s", ex)
+            self.stream_status = StreamStatus.IDLE
+            return False
+        finally:
+            if self.stream_status == StreamStatus.PREPARING:
+                _LOGGER.debug("Cleaning up stuck PREPARING state for %s", self.serial_no)
+                self.stream_status = StreamStatus.IDLE
 
     async def _check_live_stream(self):
         while self.p2p_streamer.retry is None:
