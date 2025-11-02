@@ -333,18 +333,18 @@ class ApiClient:
                 self._on_error_callback(future)
             return
 
-    try:
-        exception = future.exception()
-        _LOGGER.debug(f"on_close - executed - {future} = {exception}")
-        if self._on_error_callback is not None:
-            self._on_error_callback(future)
-        if exception is not None:
-            _LOGGER.debug(f"on_close - exception details - {exception}")
-            raise exception
-    except asyncio.CancelledError:
-        _LOGGER.debug("on_close - caught CancelledError during exception retrieval")
-        if self._on_error_callback is not None:
-            self._on_error_callback(future)
+        try:
+            exception = future.exception()
+            _LOGGER.debug(f"on_close - executed - {future} = {exception}")
+            if self._on_error_callback is not None:
+                self._on_error_callback(future)
+            if exception is not None:
+                _LOGGER.debug(f"on_close - exception details - {exception}")
+                raise exception
+        except asyncio.CancelledError:
+            _LOGGER.debug("on_close - caught CancelledError during exception retrieval")
+            if self._on_error_callback is not None:
+                self._on_error_callback(future)
 
     async def _on_error(self, error: str) -> None:
         _LOGGER.error(f"on_error - {error}")
