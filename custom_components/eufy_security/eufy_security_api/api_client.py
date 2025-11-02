@@ -326,11 +326,13 @@ class ApiClient:
         _LOGGER.debug("on_open - executed")
 
     def _on_close(self, future) -> None:
+        """Callback when a stream or client future completes."""
         if future.cancelled():
-           _LOGGER.debug(f"on_close - task was cancelled - {future}")
-        if self._on_error_callback is not None:
-           self._on_error_callback(future)
-        return
+            _LOGGER.debug(f"on_close - task was cancelled - {future}")
+            if self._on_error_callback is not None:
+                self._on_error_callback(future)
+            return
+
     try:
         exception = future.exception()
         _LOGGER.debug(f"on_close - executed - {future} = {exception}")
@@ -340,7 +342,7 @@ class ApiClient:
             _LOGGER.debug(f"on_close - exception details - {exception}")
             raise exception
     except asyncio.CancelledError:
-        _LOGGER.debug(f"on_close - caught CancelledError during exception retrieval")
+        _LOGGER.debug("on_close - caught CancelledError during exception retrieval")
         if self._on_error_callback is not None:
             self._on_error_callback(future)
 
