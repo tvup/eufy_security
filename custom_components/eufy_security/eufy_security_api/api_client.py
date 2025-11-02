@@ -326,10 +326,10 @@ class ApiClient:
         _LOGGER.debug("on_open - executed")
 
     def _on_close(self, future) -> None:
-    if future.cancelled():
-        _LOGGER.debug(f"on_close - task was cancelled - {future}")
+        if future.cancelled():
+           _LOGGER.debug(f"on_close - task was cancelled - {future}")
         if self._on_error_callback is not None:
-            self._on_error_callback(future)
+           self._on_error_callback(future)
         return
     try:
         exception = future.exception()
